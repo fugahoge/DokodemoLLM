@@ -13,6 +13,7 @@ This software allows you to call LLMs (OpenAI GPT, Google's Gemini) and input th
 
 1. **Execute DokodemoLLMahk.exe**  
    Obtain an API key from OpenAI or Gemini and set it as an environment variable. Then, simply unzip the distribution package and execute DokodemoLLMahk.exe. An icon will appear in the system tray.
+   Please download the package from the next release: https://github.com/hortense667/DokodemoLLM/releases/tag/V1.0.0
 
 2. **How to Call LLM**  
    2-1. Select Text in Input Area  
@@ -61,8 +62,9 @@ Windowsのほとんどのソフトウェアのテキストを入力するシー�
 
 1. **DokodemoLLMahk.exeの実行**  
 OpenAI、たまは、GeminiのAPIキーを取得して環境変数に設定してください。あとは、配布パッケージのzipを解凍してDokodemoLLMahk.exeを実行するだけ。トレイにアイコンが現れます。
+パッケージは、次のリリースからダウンロードしてください。https://github.com/hortense667/DokodemoLLM/releases/tag/V1.0.0
 
-2. **LLMの呼び出し方**  
+3. **LLMの呼び出し方**  
 2-1. テキスト入力エリアで範囲選択  
 まず、Gmail、Word、テキストエディタなどの入力・編集画面で処理対象にしたい部分を範囲選択します。
 
