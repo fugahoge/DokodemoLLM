@@ -112,8 +112,6 @@ WindowsのスタートアップメニューにDokodemoLLMahk.exeのショート�
 - 「^#g::」は、Ctrl-Win-gで起動：Gemini（model="gemini-2.5-flash"）
 
 ## Macでの使用
-1. **AutoHotKey以外のスニペットツールを用意**
-適切なスニペットツールを使ってDokodemoLLM.pyを呼び出すようにスクリプトを作ってください。
-したがって、Pythonの動作環境が必要となります。
-スニペットツールからはプロンプトがDokodemoLLM.pyにクリップボードで渡され、DokodemoLLM.pyからはやはりクリップボード経由で結果がスニペットツールに戻されます。詳しくはソースコードをご覧ください。
+DokodemoLLM4Macをご検討ください。
+Pythonの動作環境が必要となります。
 
