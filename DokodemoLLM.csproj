@@ -5,6 +5,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <LangVersion>10.0</LangVersion>
+    <ApplicationIcon>res\dokodemollm.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>
