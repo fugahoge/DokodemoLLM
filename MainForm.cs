@@ -10,6 +10,7 @@ using System.Linq;
 using HtmlAgilityPack;
 using OpenAI;
 using Newtonsoft.Json;
+using System.Runtime.InteropServices;
 
 namespace DokodemoLLM
 {
@@ -25,6 +26,25 @@ namespace DokodemoLLM
     private Label statusLabel;
     
     private static readonly HttpClient httpClient = new HttpClient();
+
+    // Win32 API のインポート
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetFocus();
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     public MainForm()
     {
@@ -55,7 +75,7 @@ namespace DokodemoLLM
       this.FormBorderStyle = FormBorderStyle.FixedSingle;
       this.MaximizeBox = false;
       this.MinimizeBox = false;
-      this.TopMost = true;  // 最前面に表示
+      //this.TopMost = true;  // 最前面に表示
       this.ShowInTaskbar = false;  // タスクバーに表示しない
 
       // フォント設定
@@ -211,29 +231,32 @@ namespace DokodemoLLM
           return;
         }
 
-        // プロンプトを分割
+        // システムプロンプトを作成
         string systemPrompt = promptText;
         if (webSearchCheck.Checked)
         {
           systemPrompt += " /w";
         }
 
-        // AI APIを呼び出し
+        // APIを呼び出し
         string result = await CallOpenAIAPI(systemPrompt, userText);
 
         if (!string.IsNullOrEmpty(result))
         {
-          // 結果をクリップボードにコピー
-          try
+          // 結果をダイアログで表示
+          using (var dialog = new ResultDialog(result))
           {
-            Clipboard.SetText(result);
-            statusLabel.Text = "結果をクリップボードにコピーしました";
-            statusLabel.ForeColor = Color.Green;
-          }
-          catch
-          {
-            statusLabel.Text = "結果のクリップボードへのコピーに失敗しました";
-            statusLabel.ForeColor = Color.Red;
+            var dialogResult = dialog.ShowDialog(this);
+            if (dialogResult == DialogResult.OK)
+            {
+              statusLabel.Text = "結果をクリップボードにコピーしました";
+              statusLabel.ForeColor = Color.Green;
+            }
+            else
+            {
+              statusLabel.Text = "キャンセルしました";
+              statusLabel.ForeColor = Color.Blue;
+            }
           }
         }
         else
@@ -270,7 +293,7 @@ namespace DokodemoLLM
         OpenAI.Chat.ChatMessage.CreateUserMessage(userText)
       };
 
-      // モデル名をgoogle/gemma-3-4bに変更
+      // モデルを設定
       var chatClient = client.GetChatClient("google/gemma-3-4b");
       var completion = await chatClient.CompleteChatAsync(messages, new OpenAI.Chat.ChatCompletionOptions
       {
@@ -279,13 +302,93 @@ namespace DokodemoLLM
       });
 
       // レスポンスの内容を取得
-      if (completion.Value?.Content != null && completion.Value.Content.Count > 0)
-      {
-        return completion.Value.Content[0].Text ?? "";
-      }
-      else
+      if (completion.Value?.Content == null || completion.Value.Content.Count == 0)
       {
         throw new Exception("APIの応答が空です");
+      }
+
+      return completion.Value.Content[0].Text ?? "";
+    }
+
+    private string GetSelectedText()
+    {
+      try
+      {
+        // 現在のアクティブウィンドウを取得
+        IntPtr activeWindow = GetForegroundWindow();
+        if (activeWindow == IntPtr.Zero)
+        {
+          return "";
+        }
+
+        // クリップボードのバックアップ
+        string clipboardBackup = "";
+        try
+        {
+          clipboardBackup = Clipboard.GetText();
+        }
+        catch
+        {
+          // クリップボードが空の場合
+        }
+
+        // クリップボードをクリア
+        try
+        {
+          Clipboard.Clear();
+        }
+        catch
+        {
+          return "";
+        }
+
+        // 少し待機
+        System.Threading.Thread.Sleep(100);
+
+        // Ctrl+Cを送信して選択されたテキストをコピー
+        SendKeys.SendWait("^c");
+
+        // クリップボードにテキストがコピーされるまで待機
+        int waitCount = 0;
+        while (Clipboard.GetText() == "" && waitCount < 10)
+        {
+          System.Threading.Thread.Sleep(100);
+          waitCount++;
+        }
+
+        // 選択されたテキストを取得
+        string selectedText = "";
+        try
+        {
+          selectedText = Clipboard.GetText();
+        }
+        catch
+        {
+          selectedText = "";
+        }
+
+        // クリップボードを元に戻す
+        try
+        {
+          if (!string.IsNullOrEmpty(clipboardBackup))
+          {
+            Clipboard.SetText(clipboardBackup);
+          }
+          else
+          {
+            Clipboard.Clear();
+          }
+        }
+        catch
+        {
+          // クリップボードの復元に失敗した場合は無視
+        }
+
+        return selectedText;
+      }
+      catch
+      {
+        return "";
       }
     }
     
