@@ -66,6 +66,7 @@ namespace DokodemoLLM
       // クリップボードからテキストを取得
       userText = GetSelectedText();
 
+      // フォームを初期化
       InitializeComponent();
       this.FormClosed += MainForm_FormClosed;
       this.Shown += MainForm_Shown;
@@ -87,7 +88,7 @@ namespace DokodemoLLM
 
     private void InitializeComponent()
     {
-      this.Text = "DokodemoLLM - AI アシスタント";
+      this.Text = "DokodemoLLM";
       this.Size = new System.Drawing.Size(1040, 600);
       this.StartPosition = FormStartPosition.CenterScreen;
       this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -105,17 +106,17 @@ namespace DokodemoLLM
       webSearchCheck.Location = new System.Drawing.Point(20, 20);
       webSearchCheck.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
 
-      // プロンプト選択用ComboBox
+      // プロンプト選択用コンボボックス
       promptCombo = new ComboBox();
       promptCombo.DropDownStyle = ComboBoxStyle.DropDownList;
       promptCombo.Size = new System.Drawing.Size(1000, 30);
       promptCombo.Location = new System.Drawing.Point(20, 60);
       promptCombo.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       
-      // デフォルトのプロンプトを追加
+      // コンボボックスにプロンプトを追加
       promptCombo.Items.AddRange(new string[] {
         "要約してください：",
-        "以下の文章を翻訳してください：",
+        "次の文章を翻訳してください：",
         "次のトピックについて詳しく説明してください："
       });
 
@@ -167,8 +168,14 @@ namespace DokodemoLLM
       clearButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       clearButton.Click += ClearButton_Click;
 
-      // ComboBoxの選択変更イベント
+      // コンボボックスの選択変更イベント
       promptCombo.SelectedIndexChanged += PromptCombo_SelectedIndexChanged;
+
+      // コンボボックスの先頭のアイテムを選択
+      if (promptCombo.Items.Count > 0)
+      {
+        promptCombo.SelectedIndex = 0;
+      }
 
       // コントロールをフォームに追加
       this.Controls.Add(webSearchCheck);
@@ -214,18 +221,13 @@ namespace DokodemoLLM
         return;
       }
 
-      // 履歴に追加（重複チェック）
+      // プロンプトを履歴に追加
       if (!promptCombo.Items.Contains(promptText))
       {
         promptCombo.Items.Insert(0, promptText);
         promptCombo.SelectedIndex = 0;
       }
-
-      // ボタンを無効化
-      okButton.Enabled = false;
-      statusLabel.Text = "処理中...";
-      statusLabel.ForeColor = Color.Orange;
-
+      
       // システムプロンプトを作成
       string systemPrompt = promptText;
       if (webSearchCheck.Checked)
@@ -233,10 +235,15 @@ namespace DokodemoLLM
         systemPrompt += " /w";
       }
 
+      // ボタンを無効化
+      okButton.Enabled = false;
+      statusLabel.Text = "処理中...";
+      statusLabel.ForeColor = Color.Orange;
+
       try
       {
         // APIを呼び出し
-        string result = await CallOpenAIAPI(systemPrompt, userText);
+        string result = await CallAPI(systemPrompt, userText);
 
         if (!string.IsNullOrEmpty(result))
         {
@@ -273,7 +280,7 @@ namespace DokodemoLLM
       }
     }
 
-    private async Task<string> CallOpenAIAPI(string systemPrompt, string userText)
+    private async Task<string> CallAPI(string systemPrompt, string userText)
     {
       // エンドポイントを指定
       var endpoint = new Uri("http://127.0.0.1:1234/v1/");
@@ -349,37 +356,6 @@ namespace DokodemoLLM
       Clipboard.SetText(clipboardBackup);
 
       return selectedText;
-    }
-
-    private void test()
-    {
-        // アクティブウィンドウのスレッドIDを取得
-        uint activeThreadId = GetWindowThreadProcessId(_activeWindowHandle, out uint _);
-        uint currentThreadId = GetCurrentThreadId();
-
-        // スレッドの入力状態を接続
-        AttachThreadInput(currentThreadId, activeThreadId, true);
-
-        // アクティブウィンドウをフォアグラウンドに設定
-        SetForegroundWindow(_activeWindowHandle);
-        SetFocus(_activeWindowHandle);
-        
-        // Ctrl+C を送信
-        keybd_event(0x5B, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 左Windowsキー
-        keybd_event(0x5C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 右Windowsキー
-        keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
-        keybd_event(VK_C, 0, 0, UIntPtr.Zero);
-        keybd_event(VK_C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-
-        // キー入力が反映されるまで少し待機
-        System.Threading.Thread.Sleep(50);
-
-        // スレッドの入力状態を切断
-        AttachThreadInput(currentThreadId, activeThreadId, false);
-
-        // クリップボードの内容が更新されるまで少し待機
-        System.Threading.Thread.Sleep(100);
     }
     
     //private async Task<string> CallAIAPI(string systemPrompt, string userText)

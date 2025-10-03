@@ -44,7 +44,7 @@ namespace DokodemoLLM
       // OKボタン
       okButton = new Button();
       okButton.Text = "OK";
-      okButton.Size = new System.Drawing.Size(200, 40);
+      okButton.Size = new System.Drawing.Size(120, 40);
       okButton.Location = new System.Drawing.Point(20, 520);
       okButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
       okButton.Click += OkButton_Click;
@@ -72,12 +72,12 @@ namespace DokodemoLLM
       try
       {
         Clipboard.SetText(resultText);
-        MessageBox.Show("結果をクリップボードにコピーしました。", "完了", MessageBoxButtons.OK, MessageBoxIcon.Information);
       }
       catch (Exception ex)
       {
         MessageBox.Show($"クリップボードへのコピーに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
+
       this.DialogResult = DialogResult.OK;
       this.Close();
     }
