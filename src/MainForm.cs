@@ -23,15 +23,7 @@ namespace DokodemoLLM
     // 
     private string userText = "";
     
-    private static readonly HttpClient httpClient = new HttpClient();
-
     // Win32 API のインポート
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetFocus();
-
     [DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
 
@@ -53,6 +45,8 @@ namespace DokodemoLLM
     // キーコード定数
     private const byte VK_CONTROL = 0x11;
     private const byte VK_C = 0x43;
+    private const byte VK_L_WINDOWS = 0x5B;
+    private const byte VK_R_WINDOWS = 0x5C;
     private const uint KEYEVENTF_KEYUP = 0x0002;
 
 
@@ -332,8 +326,8 @@ namespace DokodemoLLM
       SetFocus(_activeWindowHandle);
         
       // Ctrl+C を送信
-      keybd_event(0x5B, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 左Windowsキー
-      keybd_event(0x5C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 右Windowsキー
+      keybd_event(VK_L_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+      keybd_event(VK_R_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
       keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
       keybd_event(VK_C, 0, 0, UIntPtr.Zero);
       keybd_event(VK_C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
@@ -357,135 +351,5 @@ namespace DokodemoLLM
 
       return selectedText;
     }
-    
-    //private async Task<string> CallAIAPI(string systemPrompt, string userText)
-    //{
-    //  try
-    //  {
-    //    // ウェブ検索の処理
-    //    bool doWebSearch = systemPrompt.Trim().EndsWith("/w");
-    //    if (doWebSearch)
-    //    {
-    //      systemPrompt = systemPrompt.Trim().Substring(0, systemPrompt.Trim().Length - 2).Trim();
-    //      var searchResults = await SearchWeb(userText.Trim());
-    //      var pageExcerpts = await FetchPageExcerpts(searchResults.Item2);
-    //      userText = $"{userText.Trim()}\n###以下の検索結果も必要に応じて参照してください：\n{pageExcerpts}\n";
-    //    }
-
-    //    return await CallOpenAIAPI(systemPrompt, userText);
-    //  }
-    //  catch (Exception ex)
-    //  {
-    //    throw new Exception($"API呼び出しエラー: {ex.Message}");
-    //  }
-    //}
-
-    //private async Task<(string, List<string>)> SearchWeb(string query)
-    //{
-    //  try
-    //  {
-    //    var url = "https://html.duckduckgo.com/html/";
-    //    var headers = new Dictionary<string, string>
-    //    {
-    //      { "User-Agent", "Mozilla/5.0" }
-    //    };
-    //    var data = new Dictionary<string, string>
-    //    {
-    //      { "q", query }
-    //    };
-
-    //    var content = new FormUrlEncodedContent(data);
-    //    var request = new HttpRequestMessage(HttpMethod.Post, url)
-    //    {
-    //      Content = content
-    //    };
-
-    //    foreach (var header in headers)
-    //    {
-    //      request.Headers.Add(header.Key, header.Value);
-    //    }
-
-    //    var response = await httpClient.SendAsync(request);
-    //    var html = await response.Content.ReadAsStringAsync();
-
-    //    var doc = new HtmlAgilityPack.HtmlDocument();
-    //    doc.LoadHtml(html);
-
-    //    var results = new List<string>();
-    //    var urlList = new List<string>();
-
-    //    var links = doc.DocumentNode.SelectNodes("//a[@class='result__a']");
-    //    if (links != null)
-    //    {
-    //      foreach (var link in links.Take(3))
-    //      {
-    //        var title = link.InnerText.Trim();
-    //        var href = link.GetAttributeValue("href", "");
-    //        if (!string.IsNullOrEmpty(href))
-    //        {
-    //          results.Add($"{title} - {href}");
-    //          urlList.Add(href);
-    //        }
-    //      }
-    //    }
-
-    //    return (string.Join("\n", results), urlList);
-    //  }
-    //  catch (Exception ex)
-    //  {
-    //    throw new Exception($"ウェブ検索エラー: {ex.Message}");
-    //  }
-    //}
-
-    //private async Task<string> FetchPageExcerpts(List<string> urls)
-    //{
-    //  var excerpts = new List<string>();
-      
-    //  foreach (var url in urls.Take(3))
-    //  {
-    //    try
-    //    {
-    //      var excerpt = await FetchPageExcerpt(url, 1000);
-    //      excerpts.Add($"[{excerpts.Count + 1}] {url}\n{excerpt}\n");
-    //    }
-    //    catch
-    //    {
-    //      excerpts.Add($"[{excerpts.Count + 1}] {url}\n[ページ本文取得エラー]\n");
-    //    }
-    //  }
-
-    //  return string.Join("", excerpts);
-    //}
-
-    //private async Task<string> FetchPageExcerpt(string url, int maxChars)
-    //{
-    //  try
-    //  {
-    //    var headers = new Dictionary<string, string>
-    //    {
-    //      { "User-Agent", "Mozilla/5.0" }
-    //    };
-
-    //    var request = new HttpRequestMessage(HttpMethod.Get, url);
-    //    foreach (var header in headers)
-    //    {
-    //      request.Headers.Add(header.Key, header.Value);
-    //    }
-
-    //    var response = await httpClient.SendAsync(request);
-    //    var html = await response.Content.ReadAsStringAsync();
-
-    //    var doc = new HtmlAgilityPack.HtmlDocument();
-    //    doc.LoadHtml(html);
-    //    var text = doc.DocumentNode.InnerText;
-    //    text = Regex.Replace(text, @"\s+", " ").Trim();
-        
-    //    return text.Length > maxChars ? text.Substring(0, maxChars) : text;
-    //  }
-    //  catch (Exception ex)
-    //  {
-    //    return $"[ページ本文取得エラー: {ex.Message}]";
-    //  }
-    //}
   }
 }

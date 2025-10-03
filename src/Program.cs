@@ -163,9 +163,6 @@ namespace DokodemoLLM
     private static extern IntPtr GetModuleHandle(string lpModuleName);
 
     [DllImport("user32.dll")]
-    private static extern short GetAsyncKeyState(int vKey);
-
-    [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
 
     // デリゲートの定義
