@@ -3,13 +3,8 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Net.Http;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Collections.Generic;
-using System.Linq;
-using HtmlAgilityPack;
 using OpenAI;
-using Newtonsoft.Json;
 using System.Runtime.InteropServices;
 
 namespace DokodemoLLM
@@ -24,6 +19,9 @@ namespace DokodemoLLM
     private Button clearButton;
     private CheckBox webSearchCheck;
     private Label statusLabel;
+
+    // 
+    private string userText = "";
     
     private static readonly HttpClient httpClient = new HttpClient();
 
@@ -46,8 +44,28 @@ namespace DokodemoLLM
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-    public MainForm()
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetFocus(IntPtr hWnd);
+
+    // キーコード定数
+    private const byte VK_CONTROL = 0x11;
+    private const byte VK_C = 0x43;
+    private const uint KEYEVENTF_KEYUP = 0x0002;
+
+
+    private IntPtr _activeWindowHandle;
+
+
+    public MainForm(IntPtr activeWindowHandle)
     {
+      _activeWindowHandle = activeWindowHandle;
+
+      // クリップボードからテキストを取得
+      userText = GetSelectedText();
+
       InitializeComponent();
       this.FormClosed += MainForm_FormClosed;
       this.Shown += MainForm_Shown;
@@ -55,7 +73,7 @@ namespace DokodemoLLM
 
     private void MainForm_Shown(object sender, EventArgs e)
     {
-      // フォームが表示された時にフォーカスを取得
+      // ウインドウをアクティブにする
       this.BringToFront();
       this.Activate();
       this.Focus();
@@ -75,8 +93,7 @@ namespace DokodemoLLM
       this.FormBorderStyle = FormBorderStyle.FixedSingle;
       this.MaximizeBox = false;
       this.MinimizeBox = false;
-      //this.TopMost = true;  // 最前面に表示
-      this.ShowInTaskbar = false;  // タスクバーに表示しない
+      this.ShowInTaskbar = false;
 
       // フォント設定
       this.Font = new System.Drawing.Font("Yu Gothic UI", 14F, System.Drawing.FontStyle.Regular);
@@ -209,35 +226,15 @@ namespace DokodemoLLM
       statusLabel.Text = "処理中...";
       statusLabel.ForeColor = Color.Orange;
 
+      // システムプロンプトを作成
+      string systemPrompt = promptText;
+      if (webSearchCheck.Checked)
+      {
+        systemPrompt += " /w";
+      }
+
       try
       {
-        // クリップボードからテキストを取得
-        string userText = "";
-        try
-        {
-          userText = Clipboard.GetText();
-        }
-        catch
-        {
-          statusLabel.Text = "クリップボードの読み取りに失敗しました";
-          statusLabel.ForeColor = Color.Red;
-          return;
-        }
-
-        if (string.IsNullOrEmpty(userText))
-        {
-          statusLabel.Text = "クリップボードにテキストがありません";
-          statusLabel.ForeColor = Color.Red;
-          return;
-        }
-
-        // システムプロンプトを作成
-        string systemPrompt = promptText;
-        if (webSearchCheck.Checked)
-        {
-          systemPrompt += " /w";
-        }
-
         // APIを呼び出し
         string result = await CallOpenAIAPI(systemPrompt, userText);
 
@@ -312,84 +309,77 @@ namespace DokodemoLLM
 
     private string GetSelectedText()
     {
-      try
-      {
-        // 現在のアクティブウィンドウを取得
-        IntPtr activeWindow = GetForegroundWindow();
-        if (activeWindow == IntPtr.Zero)
-        {
-          return "";
-        }
+      // クリップボードのバックアップ
+      string clipboardBackup = "";
+      clipboardBackup = Clipboard.GetText();
+      
+      // アクティブウィンドウのスレッドIDを取得
+      uint activeThreadId = GetWindowThreadProcessId(_activeWindowHandle, out uint _);
+      uint currentThreadId = GetCurrentThreadId();
 
-        // クリップボードのバックアップ
-        string clipboardBackup = "";
-        try
-        {
-          clipboardBackup = Clipboard.GetText();
-        }
-        catch
-        {
-          // クリップボードが空の場合
-        }
+      // スレッドの入力状態を接続
+      AttachThreadInput(currentThreadId, activeThreadId, true);
 
-        // クリップボードをクリア
-        try
-        {
-          Clipboard.Clear();
-        }
-        catch
-        {
-          return "";
-        }
+      // アクティブウィンドウをフォアグラウンドに設定
+      SetForegroundWindow(_activeWindowHandle);
+      SetFocus(_activeWindowHandle);
+        
+      // Ctrl+C を送信
+      keybd_event(0x5B, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 左Windowsキー
+      keybd_event(0x5C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 右Windowsキー
+      keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+      keybd_event(VK_C, 0, 0, UIntPtr.Zero);
+      keybd_event(VK_C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+      keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
 
-        // 少し待機
+      // キー入力が反映されるまで少し待機
+      System.Threading.Thread.Sleep(50);
+
+      // スレッドの入力状態を切断
+      AttachThreadInput(currentThreadId, activeThreadId, false);
+
+      // クリップボードの内容が更新されるまで少し待機
+      System.Threading.Thread.Sleep(100);
+
+      // 選択されたテキストを取得
+      string selectedText = "";
+      selectedText = Clipboard.GetText();
+
+      // クリップボードを元に戻す
+      Clipboard.SetText(clipboardBackup);
+
+      return selectedText;
+    }
+
+    private void test()
+    {
+        // アクティブウィンドウのスレッドIDを取得
+        uint activeThreadId = GetWindowThreadProcessId(_activeWindowHandle, out uint _);
+        uint currentThreadId = GetCurrentThreadId();
+
+        // スレッドの入力状態を接続
+        AttachThreadInput(currentThreadId, activeThreadId, true);
+
+        // アクティブウィンドウをフォアグラウンドに設定
+        SetForegroundWindow(_activeWindowHandle);
+        SetFocus(_activeWindowHandle);
+        
+        // Ctrl+C を送信
+        keybd_event(0x5B, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 左Windowsキー
+        keybd_event(0x5C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero); // 右Windowsキー
+        keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+        keybd_event(VK_C, 0, 0, UIntPtr.Zero);
+        keybd_event(VK_C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+        // キー入力が反映されるまで少し待機
+        System.Threading.Thread.Sleep(50);
+
+        // スレッドの入力状態を切断
+        AttachThreadInput(currentThreadId, activeThreadId, false);
+
+        // クリップボードの内容が更新されるまで少し待機
         System.Threading.Thread.Sleep(100);
-
-        // Ctrl+Cを送信して選択されたテキストをコピー
-        SendKeys.SendWait("^c");
-
-        // クリップボードにテキストがコピーされるまで待機
-        int waitCount = 0;
-        while (Clipboard.GetText() == "" && waitCount < 10)
-        {
-          System.Threading.Thread.Sleep(100);
-          waitCount++;
-        }
-
-        // 選択されたテキストを取得
-        string selectedText = "";
-        try
-        {
-          selectedText = Clipboard.GetText();
-        }
-        catch
-        {
-          selectedText = "";
-        }
-
-        // クリップボードを元に戻す
-        try
-        {
-          if (!string.IsNullOrEmpty(clipboardBackup))
-          {
-            Clipboard.SetText(clipboardBackup);
-          }
-          else
-          {
-            Clipboard.Clear();
-          }
-        }
-        catch
-        {
-          // クリップボードの復元に失敗した場合は無視
-        }
-
-        return selectedText;
-      }
-      catch
-      {
-        return "";
-      }
     }
     
     //private async Task<string> CallAIAPI(string systemPrompt, string userText)

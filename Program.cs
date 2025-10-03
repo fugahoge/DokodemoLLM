@@ -115,6 +115,9 @@ namespace DokodemoLLM
           // Win + Ctrl + C の組み合わせを監視
           if (key == Keys.C && _winKeyPressed && _ctrlKeyPressed)
           {
+            // アクティブなウィンドウのハンドルを取得
+            IntPtr activeWindowHandle = GetForegroundWindow();
+            
             // 既存のフォームがある場合は閉じる
             if (_mainForm != null && !_mainForm.IsDisposed)
             {
@@ -133,7 +136,7 @@ namespace DokodemoLLM
             
             // 新しいフォームを作成して表示
             Thread thread = new Thread(() => {
-              _mainForm = new MainForm();
+              _mainForm = new MainForm(activeWindowHandle);
               _mainForm.ShowDialog();
             });
             thread.SetApartmentState(ApartmentState.STA);
@@ -161,6 +164,9 @@ namespace DokodemoLLM
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int vKey);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
 
     // デリゲートの定義
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
