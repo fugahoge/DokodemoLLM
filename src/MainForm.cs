@@ -15,7 +15,7 @@ namespace DokodemoLLM
     private Label promptLabel;
     private TextBox promptEdit;
     private Button okButton;
-    private Button cancelButton;
+    private Button closeButton;
     private Button clearButton;
     private CheckBox webSearchCheck;
     private Label statusLabel;
@@ -83,7 +83,7 @@ namespace DokodemoLLM
     private void InitializeComponent()
     {
       this.Text = "DokodemoLLM";
-      this.Size = new System.Drawing.Size(1040, 600);
+      this.Size = new System.Drawing.Size(1024, 600);
       this.StartPosition = FormStartPosition.CenterScreen;
       this.FormBorderStyle = FormBorderStyle.FixedSingle;
       this.MaximizeBox = false;
@@ -95,15 +95,15 @@ namespace DokodemoLLM
 
       // ウェブ検索チェックボックス
       webSearchCheck = new CheckBox();
-      webSearchCheck.Text = "ウェブ検索を使用する (/w)";
+      webSearchCheck.Text = "ウェブ検索を使用する";
       webSearchCheck.Size = new System.Drawing.Size(300, 30);
-      webSearchCheck.Location = new System.Drawing.Point(20, 20);
+      webSearchCheck.Location = new System.Drawing.Point(20, 420);
       webSearchCheck.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
 
       // プロンプト選択用コンボボックス
       promptCombo = new ComboBox();
       promptCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-      promptCombo.Size = new System.Drawing.Size(1000, 30);
+      promptCombo.Size = new System.Drawing.Size(964, 30);
       promptCombo.Location = new System.Drawing.Point(20, 60);
       promptCombo.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       
@@ -116,9 +116,9 @@ namespace DokodemoLLM
 
       // プロンプト入力ラベル
       promptLabel = new Label();
-      promptLabel.Text = "プロンプト入力（改行可能）:";
-      promptLabel.Size = new System.Drawing.Size(1000, 30);
-      promptLabel.Location = new System.Drawing.Point(20, 110);
+      promptLabel.Text = "プロンプト：";
+      promptLabel.Size = new System.Drawing.Size(964, 30);
+      promptLabel.Location = new System.Drawing.Point(20, 20);
       promptLabel.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
 
       // プロンプト入力エリア
@@ -126,8 +126,8 @@ namespace DokodemoLLM
       promptEdit.Multiline = true;
       promptEdit.ScrollBars = ScrollBars.Vertical;
       promptEdit.WordWrap = true;
-      promptEdit.Size = new System.Drawing.Size(1000, 300);
-      promptEdit.Location = new System.Drawing.Point(20, 150);
+      promptEdit.Size = new System.Drawing.Size(964, 300);
+      promptEdit.Location = new System.Drawing.Point(20, 110);
       promptEdit.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
 
       // ステータスラベル
@@ -146,19 +146,19 @@ namespace DokodemoLLM
       okButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       okButton.Click += OkButton_Click;
 
-      // キャンセルボタン
-      cancelButton = new Button();
-      cancelButton.Text = "キャンセル";
-      cancelButton.Size = new System.Drawing.Size(150, 40);
-      cancelButton.Location = new System.Drawing.Point(130, 510);
-      cancelButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
-      cancelButton.Click += CancelButton_Click;
+      // クローズボタン
+      closeButton = new Button();
+      closeButton.Text = "クローズ";
+      closeButton.Size = new System.Drawing.Size(100, 40);
+      closeButton.Location = new System.Drawing.Point(240, 510);
+      closeButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
+      closeButton.Click += CloseButton_Click;
 
       // クリアボタン
       clearButton = new Button();
       clearButton.Text = "クリア";
       clearButton.Size = new System.Drawing.Size(100, 40);
-      clearButton.Location = new System.Drawing.Point(290, 510);
+      clearButton.Location = new System.Drawing.Point(130, 510);
       clearButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       clearButton.Click += ClearButton_Click;
 
@@ -178,7 +178,7 @@ namespace DokodemoLLM
       this.Controls.Add(promptEdit);
       this.Controls.Add(statusLabel);
       this.Controls.Add(okButton);
-      this.Controls.Add(cancelButton);
+      this.Controls.Add(closeButton);
       this.Controls.Add(clearButton);
     }
 
@@ -190,7 +190,7 @@ namespace DokodemoLLM
       }
     }
 
-    private void CancelButton_Click(object sender, EventArgs e)
+    private void CloseButton_Click(object sender, EventArgs e)
     {
       // フォームを閉じる
       this.Close();

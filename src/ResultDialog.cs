@@ -20,7 +20,7 @@ namespace DokodemoLLM
     private void InitializeComponent()
     {
       this.Text = "結果";
-      this.Size = new System.Drawing.Size(800, 600);
+      this.Size = new System.Drawing.Size(800, 520);
       this.StartPosition = FormStartPosition.CenterParent;
       this.FormBorderStyle = FormBorderStyle.FixedDialog;
       this.MaximizeBox = false;
@@ -36,24 +36,24 @@ namespace DokodemoLLM
       resultTextBox.ScrollBars = ScrollBars.Vertical;
       resultTextBox.WordWrap = true;
       resultTextBox.ReadOnly = true;
-      resultTextBox.Size = new System.Drawing.Size(760, 480);
+      resultTextBox.Size = new System.Drawing.Size(740, 380);
       resultTextBox.Location = new System.Drawing.Point(20, 20);
       resultTextBox.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
       resultTextBox.Text = resultText;
 
       // OKボタン
       okButton = new Button();
-      okButton.Text = "OK";
+      okButton.Text = "コピー";
       okButton.Size = new System.Drawing.Size(120, 40);
-      okButton.Location = new System.Drawing.Point(20, 520);
+      okButton.Location = new System.Drawing.Point(20, 420);
       okButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
       okButton.Click += OkButton_Click;
 
       // キャンセルボタン
       cancelButton = new Button();
-      cancelButton.Text = "キャンセル";
+      cancelButton.Text = "クローズ";
       cancelButton.Size = new System.Drawing.Size(120, 40);
-      cancelButton.Location = new System.Drawing.Point(240, 520);
+      cancelButton.Location = new System.Drawing.Point(150, 420);
       cancelButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
       cancelButton.Click += CancelButton_Click;
 
