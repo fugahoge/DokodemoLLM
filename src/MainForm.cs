@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Collections.Generic;
+using System.Linq;
 using OpenAI;
 using System.Runtime.InteropServices;
 
@@ -107,12 +108,9 @@ namespace DokodemoLLM
       promptCombo.Location = new System.Drawing.Point(20, 60);
       promptCombo.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       
-      // コンボボックスにプロンプトを追加
-      promptCombo.Items.AddRange(new string[] {
-        "要約してください：",
-        "次の文章を翻訳してください：",
-        "次のトピックについて詳しく説明してください："
-      });
+      // 設定ファイルからプロンプトを読み込んでコンボボックスに追加
+      var config = ConfigManager.Config;
+      promptCombo.Items.AddRange(config.Prompts.ToArray());
 
       // プロンプト入力ラベル
       promptLabel = new Label();
@@ -276,9 +274,12 @@ namespace DokodemoLLM
 
     private async Task<string> CallAPI(string systemPrompt, string userText)
     {
+      // 設定ファイルから設定を読み込み
+      var config = ConfigManager.Config;
+      
       // エンドポイントを指定
-      var endpoint = new Uri("http://127.0.0.1:1234/v1/");
-      var credential = new System.ClientModel.ApiKeyCredential("dummy");
+      var endpoint = new Uri(config.Endpoint);
+      var credential = new System.ClientModel.ApiKeyCredential(config.ApiKey);
       var options = new OpenAI.OpenAIClientOptions
       {
         Endpoint = endpoint
@@ -292,11 +293,11 @@ namespace DokodemoLLM
       };
 
       // モデルを設定
-      var chatClient = client.GetChatClient("google/gemma-3-4b");
+      var chatClient = client.GetChatClient(config.Model);
       var completion = await chatClient.CompleteChatAsync(messages, new OpenAI.Chat.ChatCompletionOptions
       {
-        Temperature = 0.7f,
-        MaxOutputTokenCount = 4096
+        Temperature = config.Temperature,
+        MaxOutputTokenCount = config.MaxOutputTokenCount
       });
 
       // レスポンスの内容を取得
