@@ -137,14 +137,23 @@ namespace DokodemoLLM
               }
             }
             
-            // アクティブなウィンドウの選択されたテキストを取得
-            IntPtr activeWindowHandle = GetForegroundWindow();
-            string selectedText = GetSelectedText(activeWindowHandle);
-            
             // 新しいフォームを作成して表示
             Thread thread = new Thread(() => {
-              _mainForm = new MainForm(selectedText);
-              _mainForm.ShowDialog();
+              try
+              {
+                // アクティブなウィンドウの選択されたテキストを取得
+                IntPtr activeWindowHandle = GetForegroundWindow();
+                string selectedText = GetSelectedText(activeWindowHandle);
+                
+                _mainForm = new MainForm(selectedText);
+                _mainForm.ShowDialog();
+              }
+              catch
+              {
+                // エラーが発生した場合は空のテキストでフォームを表示
+                _mainForm = new MainForm("");
+                _mainForm.ShowDialog();
+              }
             });
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
@@ -159,46 +168,62 @@ namespace DokodemoLLM
     // 選択されたテキストを取得
     public static string GetSelectedText(IntPtr activeWindowHandle)
     {
-      // クリップボードのバックアップ
-      string clipboardBackup = "";
-      clipboardBackup = Clipboard.GetText();
-      
-      // アクティブウィンドウのスレッドIDを取得
-      uint activeThreadId = GetWindowThreadProcessId(activeWindowHandle, out uint _);
-      uint currentThreadId = GetCurrentThreadId();
-
-      // スレッドの入力状態を接続
-      AttachThreadInput(currentThreadId, activeThreadId, true);
-
-      // アクティブウィンドウをフォアグラウンドに設定
-      SetForegroundWindow(activeWindowHandle);
-      SetFocus(activeWindowHandle);
+      try
+      {
+        // クリップボードのバックアップ
+        string clipboardBackup = "";
+        clipboardBackup = Clipboard.GetText();
         
-      // Ctrl+C を送信
-      keybd_event(VK_L_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-      keybd_event(VK_R_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-      keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
-      keybd_event(VK_C, 0, 0, UIntPtr.Zero);
-      keybd_event(VK_C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-      keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        // アクティブウィンドウのスレッドIDを取得
+        uint activeThreadId = GetWindowThreadProcessId(activeWindowHandle, out uint _);
+        uint currentThreadId = GetCurrentThreadId();
 
-      // キー入力が反映されるまで少し待機
-      System.Threading.Thread.Sleep(50);
+        // スレッドの入力状態を接続
+        bool attachSuccess = AttachThreadInput(currentThreadId, activeThreadId, true);
+        
+        if (attachSuccess)
+        {
+          try
+          {
+            // アクティブウィンドウをフォアグラウンドに設定
+            SetForegroundWindow(activeWindowHandle);
+            SetFocus(activeWindowHandle);
+              
+            // Ctrl+C を送信
+            keybd_event(VK_L_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_R_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_C, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
 
-      // スレッドの入力状態を切断
-      AttachThreadInput(currentThreadId, activeThreadId, false);
+            // キー入力が反映されるまで少し待機
+            System.Threading.Thread.Sleep(50);
+          }
+          finally
+          {
+            // スレッドの入力状態を切断
+            AttachThreadInput(currentThreadId, activeThreadId, false);
+          }
+        }
 
-      // クリップボードの内容が更新されるまで少し待機
-      System.Threading.Thread.Sleep(100);
+        // クリップボードの内容が更新されるまで少し待機
+        System.Threading.Thread.Sleep(100);
 
-      // 選択されたテキストを取得
-      string selectedText = "";
-      selectedText = Clipboard.GetText();
+        // 選択されたテキストを取得
+        string selectedText = "";
+        selectedText = Clipboard.GetText();
 
-      // クリップボードを元に戻す
-      Clipboard.SetText(clipboardBackup);
+        // クリップボードを元に戻す
+        Clipboard.SetText(clipboardBackup);
 
-      return selectedText;
+        return selectedText;
+      }
+      catch
+      {
+        // エラーが発生した場合は空の文字列を返す
+        return "";
+      }
     }
 
     // デリゲートの定義
