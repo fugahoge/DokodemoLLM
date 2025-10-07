@@ -8,6 +8,12 @@ namespace DokodemoLLM
 {
   class Program
   {
+    // キーコード定数
+    private const byte VK_CONTROL = 0x11;
+    private const byte VK_C = 0x43;
+    private const byte VK_L_WINDOWS = 0x5B;
+    private const byte VK_R_WINDOWS = 0x5C;
+    private const uint KEYEVENTF_KEYUP = 0x0002;
     private const int WH_KEYBOARD_LL = 0x0D;
 
     private static IntPtr _hookHandle = IntPtr.Zero;
@@ -115,9 +121,6 @@ namespace DokodemoLLM
           // Win + Ctrl + C の組み合わせを監視
           if (key == Keys.C && _winKeyPressed && _ctrlKeyPressed)
           {
-            // アクティブなウィンドウのハンドルを取得
-            IntPtr activeWindowHandle = GetForegroundWindow();
-            
             // 既存のフォームがある場合は閉じる
             if (_mainForm != null && !_mainForm.IsDisposed)
             {
@@ -134,7 +137,8 @@ namespace DokodemoLLM
               }
             }
             
-            // 選択されたテキストを取得
+            // アクティブなウィンドウの選択されたテキストを取得
+            IntPtr activeWindowHandle = GetForegroundWindow();
             string selectedText = GetSelectedText(activeWindowHandle);
             
             // 新しいフォームを作成して表示
@@ -152,47 +156,7 @@ namespace DokodemoLLM
       return CallNextHookEx(_hookHandle, nCode, wParam, lParam);
     }
 
-    // Win32 API のインポート
-    [DllImport("user32.dll")]
-    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
-
-    [DllImport("user32.dll")]
-    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr GetModuleHandle(string lpModuleName);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-    [DllImport("kernel32.dll")]
-    private static extern uint GetCurrentThreadId();
-
-    [DllImport("user32.dll")]
-    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetFocus(IntPtr hWnd);
-
-    // キーコード定数
-    private const byte VK_CONTROL = 0x11;
-    private const byte VK_C = 0x43;
-    private const byte VK_L_WINDOWS = 0x5B;
-    private const byte VK_R_WINDOWS = 0x5C;
-    private const uint KEYEVENTF_KEYUP = 0x0002;
-
+    // 選択されたテキストを取得
     public static string GetSelectedText(IntPtr activeWindowHandle)
     {
       // クリップボードのバックアップ
@@ -239,5 +203,39 @@ namespace DokodemoLLM
 
     // デリゲートの定義
     private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+    // Win32 API のインポート
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+    [DllImport("user32.dll")]
+    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetFocus(IntPtr hWnd);
   }
 }

@@ -2,7 +2,9 @@ using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Threading.Tasks;
+using System.Net.Http;
 using System.Collections.Generic;
+using System.Linq;
 using OpenAI;
 
 namespace DokodemoLLM
@@ -183,22 +185,22 @@ namespace DokodemoLLM
         promptCombo.SelectedIndex = 0;
       }
       
-      // システムプロンプトを作成
-      string systemPrompt = promptText;
-      if (webSearchCheck.Checked)
-      {
-        systemPrompt += " /w";
-      }
-
       // ボタンを無効化
       okButton.Enabled = false;
       statusLabel.Text = "処理中...";
       statusLabel.ForeColor = Color.Orange;
 
-      try
-      {
-        // APIを呼び出し
-        string result = await CallAPI(systemPrompt, userText);
+        try
+        {
+          // システムプロンプトを作成
+          string systemPrompt = promptText;
+          if (webSearchCheck.Checked)
+          {
+            systemPrompt += " /w";
+          }
+
+          // APIを呼び出し
+          string result = await CallAPI(systemPrompt, userText);
 
         if (!string.IsNullOrEmpty(result))
         {
