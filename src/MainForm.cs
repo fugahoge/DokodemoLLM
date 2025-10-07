@@ -2,11 +2,8 @@ using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Threading.Tasks;
-using System.Net.Http;
 using System.Collections.Generic;
-using System.Linq;
 using OpenAI;
-using System.Runtime.InteropServices;
 
 namespace DokodemoLLM
 {
@@ -21,45 +18,11 @@ namespace DokodemoLLM
     private CheckBox webSearchCheck;
     private Label statusLabel;
 
-    // 
     private string userText = "";
-    
-    // Win32 API のインポート
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
 
-    [DllImport("user32.dll")]
-    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-    [DllImport("kernel32.dll")]
-    private static extern uint GetCurrentThreadId();
-
-    [DllImport("user32.dll")]
-    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
-
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-
-    [DllImport("user32.dll")]
-    private static extern bool SetFocus(IntPtr hWnd);
-
-    // キーコード定数
-    private const byte VK_CONTROL = 0x11;
-    private const byte VK_C = 0x43;
-    private const byte VK_L_WINDOWS = 0x5B;
-    private const byte VK_R_WINDOWS = 0x5C;
-    private const uint KEYEVENTF_KEYUP = 0x0002;
-
-
-    private IntPtr _activeWindowHandle;
-
-
-    public MainForm(IntPtr activeWindowHandle)
+    public MainForm(string selectedText)
     {
-      _activeWindowHandle = activeWindowHandle;
-
-      // クリップボードからテキストを取得
-      userText = GetSelectedText();
+      userText = selectedText;
 
       // フォームを初期化
       InitializeComponent();
@@ -309,48 +272,5 @@ namespace DokodemoLLM
       return completion.Value.Content[0].Text ?? "";
     }
 
-    private string GetSelectedText()
-    {
-      // クリップボードのバックアップ
-      string clipboardBackup = "";
-      clipboardBackup = Clipboard.GetText();
-      
-      // アクティブウィンドウのスレッドIDを取得
-      uint activeThreadId = GetWindowThreadProcessId(_activeWindowHandle, out uint _);
-      uint currentThreadId = GetCurrentThreadId();
-
-      // スレッドの入力状態を接続
-      AttachThreadInput(currentThreadId, activeThreadId, true);
-
-      // アクティブウィンドウをフォアグラウンドに設定
-      SetForegroundWindow(_activeWindowHandle);
-      SetFocus(_activeWindowHandle);
-        
-      // Ctrl+C を送信
-      keybd_event(VK_L_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-      keybd_event(VK_R_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-      keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
-      keybd_event(VK_C, 0, 0, UIntPtr.Zero);
-      keybd_event(VK_C, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-      keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-
-      // キー入力が反映されるまで少し待機
-      System.Threading.Thread.Sleep(50);
-
-      // スレッドの入力状態を切断
-      AttachThreadInput(currentThreadId, activeThreadId, false);
-
-      // クリップボードの内容が更新されるまで少し待機
-      System.Threading.Thread.Sleep(100);
-
-      // 選択されたテキストを取得
-      string selectedText = "";
-      selectedText = Clipboard.GetText();
-
-      // クリップボードを元に戻す
-      Clipboard.SetText(clipboardBackup);
-
-      return selectedText;
-    }
   }
 }
