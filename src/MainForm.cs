@@ -1,16 +1,20 @@
-using System;
-using System.Windows.Forms;
-using System.Drawing;
-using System.Threading.Tasks;
-using System.Net.Http;
-using System.Collections.Generic;
-using System.Linq;
 using OpenAI;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using HtmlAgilityPack;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace DokodemoLLM
 {
   public partial class MainForm : Form
   {
+    private static readonly HttpClient httpClient = new HttpClient();
+
     private ComboBox promptCombo;
     private Label promptLabel;
     private TextBox promptEdit;
@@ -190,17 +194,21 @@ namespace DokodemoLLM
       statusLabel.Text = "処理中...";
       statusLabel.ForeColor = Color.Orange;
 
-        try
-        {
-          // システムプロンプトを作成
-          string systemPrompt = promptText;
-          if (webSearchCheck.Checked)
-          {
-            systemPrompt += " /w";
-          }
+      try
+      {
+        string systemPrompt = promptText;
 
-          // APIを呼び出し
-          string result = await CallAPI(systemPrompt, userText);
+        // システムプロンプトを作成
+        if (webSearchCheck.Checked)
+        {
+          // ウェブ検索の処理
+          var searchResults = await SearchWeb(userText.Trim());
+          var pageExcerpts = await FetchPageExcerpts(searchResults.Item2);
+          userText = $"{userText.Trim()}\n###以下の検索結果も必要に応じて参照してください：\n{pageExcerpts}\n";
+        }
+
+        // APIを呼び出し
+        string result = await CallAPI(systemPrompt, userText);
 
         if (!string.IsNullOrEmpty(result))
         {
@@ -272,6 +280,116 @@ namespace DokodemoLLM
       }
 
       return completion.Value.Content[0].Text ?? "";
+    }
+
+    // ウェブ検索
+    private async Task<(string, List<string>)> SearchWeb(string query)
+    {
+      try
+      {
+        var url = "https://html.duckduckgo.com/html/";
+        var headers = new Dictionary<string, string>
+        {
+          { "User-Agent", "Mozilla/5.0" }
+        };
+        var data = new Dictionary<string, string>
+        {
+          { "q", query }
+        };
+
+        var content = new FormUrlEncodedContent(data);
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+          Content = content
+        };
+
+        foreach (var header in headers)
+        {
+          request.Headers.Add(header.Key, header.Value);
+        }
+
+        var response = await httpClient.SendAsync(request);
+        var html = await response.Content.ReadAsStringAsync();
+
+        var doc = new HtmlAgilityPack.HtmlDocument();
+        doc.LoadHtml(html);
+
+        var results = new List<string>();
+        var urlList = new List<string>();
+
+        var links = doc.DocumentNode.SelectNodes("a[@class='result__a']");
+        if (links != null)
+        {
+          foreach (var link in links.Take(3))
+          {
+            var title = link.InnerText.Trim();
+            var href = link.GetAttributeValue("href", "");
+            if (!string.IsNullOrEmpty(href))
+            {
+              results.Add($"{title} - {href}");
+              urlList.Add(href);
+            }
+          }
+        }
+
+        return (string.Join("\n", results), urlList);
+      }
+      catch (Exception ex)
+      {
+        throw new Exception($"ウェブ検索エラー: {ex.Message}");
+      }
+    }
+
+    // 
+    private async Task<string> FetchPageExcerpts(List<string> urls)
+    {
+      var excerpts = new List<string>();
+      
+      foreach (var url in urls.Take(3))
+      {
+        try
+        {
+          var excerpt = await FetchPageExcerpt(url, 1000);
+          excerpts.Add($"[{excerpts.Count + 1}] {url}\n{excerpt}\n");
+        }
+        catch
+        {
+          excerpts.Add($"[{excerpts.Count + 1}] {url}\n[ページ本文取得エラー]\n");
+        }
+      }
+
+      return string.Join("", excerpts);
+    }
+
+    private async Task<string> FetchPageExcerpt(string url, int maxChars)
+    {
+      try
+      {
+        var headers = new Dictionary<string, string>
+        {
+          { "User-Agent", "Mozilla/5.0" }
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        foreach (var header in headers)
+        {
+          request.Headers.Add(header.Key, header.Value);
+        }
+
+        var response = await httpClient.SendAsync(request);
+        var html = await response.Content.ReadAsStringAsync();
+
+        var doc = new HtmlAgilityPack.HtmlDocument();
+        doc.LoadHtml(html);
+        var text = doc.DocumentNode.InnerText;
+        text = Regex.Replace(text, @"\s+", " ").Trim();
+        
+        return text.Length > maxChars ? text.Substring(0, maxChars) : text;
+      }
+      catch (Exception ex)
+      {
+        return $"[ページ本文取得エラー: {ex.Message}]";
+      }
     }
 
   }
