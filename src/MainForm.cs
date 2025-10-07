@@ -290,7 +290,7 @@ namespace DokodemoLLM
         var url = "https://html.duckduckgo.com/html/";
         var headers = new Dictionary<string, string>
         {
-          { "User-Agent", "Mozilla/5.0" }
+          { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" }
         };
         var data = new Dictionary<string, string>
         {
@@ -312,12 +312,19 @@ namespace DokodemoLLM
         var html = await response.Content.ReadAsStringAsync();
 
         var doc = new HtmlAgilityPack.HtmlDocument();
+        HtmlNode.ElementsFlags.Remove("form");
         doc.LoadHtml(html);
 
         var results = new List<string>();
         var urlList = new List<string>();
 
-        var links = doc.DocumentNode.SelectNodes("a[@class='result__a']");
+        // 複数のセレクターを試す
+        var links = doc.DocumentNode.SelectNodes("//a[@class='result__a']") ??
+                    doc.DocumentNode.SelectNodes("//a[contains(@class, 'result__a')]") ??
+                    doc.DocumentNode.SelectNodes("//a[contains(@class, 'result')]") ??
+                    doc.DocumentNode.SelectNodes("//h2/a") ??
+                    doc.DocumentNode.SelectNodes("//a[contains(@href, 'http')]");
+
         if (links != null)
         {
           foreach (var link in links.Take(3))
