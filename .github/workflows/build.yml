@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  release:
+    types:
+    - released
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    env:
+      Solution_Name: DokodemoLLM.sln
+      Project_Name: DokodemoLLM.csproj
+
+    strategy:
+      matrix:
+        configuration: [Release]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.Solution_Name }}
+      
+    - name: Build
+      run: dotnet build ${{ env.Project_Name }} --configuration ${{ matrix.configuration }} --no-restore
+    
+    - name: Publish
+      run: dotnet publish ${{ env.Project_Name }} --configuration ${{ matrix.configuration }} --no-build --output ./publish
+    
+    - name: Zip output
+      run: powershell Compress-Archive -DestinationPath ${{ matrix.configuration }}.zip -Path .\publish\*.*
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.configuration }}
+        path: ${{ matrix.configuration }}.zip
+
+    - name: Upload release asset (zip)
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      with:
+        upload_url: ${{github.event.release.upload_url}}
+        asset_path: ${{ matrix.configuration }}.zip
+        asset_name: DokodemoLLM-${{github.event.release.tag_name}}.zip
+        asset_content_type: application/zip

@@ -1,0 +1,12 @@
+{
+  "Endpoint": "http://127.0.0.1:1234/v1/",
+  "ApiKey": "dummy",
+  "Model": "google/gemma-3-4b",
+  "Temperature": 0.7,
+  "MaxOutputTokenCount": 4096,
+  "Prompts": [
+  "要約してください：",
+  "次の文章を翻訳してください：",
+  "次のトピックについて200文字程度で説明してください："
+  ]
+}
