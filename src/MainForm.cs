@@ -318,13 +318,7 @@ namespace DokodemoLLM
         var results = new List<string>();
         var urlList = new List<string>();
 
-        // 複数のセレクターを試す
-        var links = doc.DocumentNode.SelectNodes("//a[@class='result__a']") ??
-                    doc.DocumentNode.SelectNodes("//a[contains(@class, 'result__a')]") ??
-                    doc.DocumentNode.SelectNodes("//a[contains(@class, 'result')]") ??
-                    doc.DocumentNode.SelectNodes("//h2/a") ??
-                    doc.DocumentNode.SelectNodes("//a[contains(@href, 'http')]");
-
+        var links = doc.DocumentNode.SelectNodes("//a[@class='result__a']");
         if (links != null)
         {
           foreach (var link in links.Take(3))
