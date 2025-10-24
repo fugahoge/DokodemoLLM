@@ -3,8 +3,23 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <SupportedOSPlatformVersion>6.1</SupportedOSPlatformVersion>
+    <SupportedOSPlatform>windows</SupportedOSPlatform>
+    
+    <!-- 単一ファイル実行可能ファイルの設定 -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    
+    <!-- 出力先の設定 -->
+    <PublishDir>publish</PublishDir>
+    
+    <!-- デバッグシンボルの埋め込み -->
+    <DebugType>embedded</DebugType>
+    
     <UseWindowsForms>true</UseWindowsForms>
-    <LangVersion>10.0</LangVersion>
     <ApplicationIcon>res\dokodemollm.ico</ApplicationIcon>
     
     <!-- 単一ファイル実行可能ファイルの設定 -->
@@ -38,6 +53,7 @@
   <ItemGroup>
     <Content Include="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 

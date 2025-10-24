@@ -7,7 +7,7 @@ namespace DokodemoLLM
   public static class ConfigManager
   {
     private static readonly string ConfigFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
-    private static AppConfig _config;
+    private static AppConfig _config = null!;
 
     public static AppConfig Config
     {
@@ -17,7 +17,7 @@ namespace DokodemoLLM
         {
           LoadConfig();
         }
-        return _config;
+        return _config!;
       }
     }
 
@@ -28,7 +28,7 @@ namespace DokodemoLLM
         if (File.Exists(ConfigFilePath))
         {
           string jsonString = File.ReadAllText(ConfigFilePath);
-          _config = JsonSerializer.Deserialize<AppConfig>(jsonString);
+          _config = JsonSerializer.Deserialize<AppConfig>(jsonString) ?? new AppConfig();
         }
         else
         {

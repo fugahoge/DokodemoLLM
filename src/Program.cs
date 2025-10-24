@@ -11,14 +11,17 @@ namespace DokodemoLLM
     // キーコード定数
     private const byte VK_CONTROL = 0x11;
     private const byte VK_C = 0x43;
+    private const byte VK_V = 0x56;
     private const byte VK_L_WINDOWS = 0x5B;
     private const byte VK_R_WINDOWS = 0x5C;
     private const uint KEYEVENTF_KEYUP = 0x0002;
     private const int WH_KEYBOARD_LL = 0x0D;
 
+
+
     private static IntPtr _hookHandle = IntPtr.Zero;
-    private static readonly LowLevelKeyboardProc _callBack = CallbackProc;
-    private static Form _mainForm = null;
+    private static readonly LowLevelKeyboardProc _callBack = CallbackProc!;
+    private static MainForm? _mainForm = null;
     
     // キーの状態を追跡する変数
     private static bool _winKeyPressed = false;
@@ -57,21 +60,24 @@ namespace DokodemoLLM
       // キーボードフックの登録
       using (Process process = Process.GetCurrentProcess())
       {
-        using (ProcessModule module = process.MainModule)
+        using (ProcessModule? module = process.MainModule)
         {
-          _hookHandle = SetWindowsHookEx(
-             WH_KEYBOARD_LL,                       // フックするイベントの種類（13：キーボード）
-             _callBack,                            // フック時のコールバック関数
-             GetModuleHandle(module.ModuleName),   // インスタンスハンドル
-             0                                     // スレッドID（0：全てのスレッドでフック）
-         );
-         
-          if (_hookHandle == IntPtr.Zero)
+          if (module?.ModuleName != null)
           {
-            Console.WriteLine("フック登録に失敗しました");
-            Console.WriteLine($"モジュール名: {module.ModuleName}");
-            int error = Marshal.GetLastWin32Error();
-            Console.WriteLine($"エラーコード: {error}");
+            _hookHandle = SetWindowsHookEx(
+               WH_KEYBOARD_LL,                       // フックするイベントの種類（13：キーボード）
+               _callBack,                            // フック時のコールバック関数
+               GetModuleHandle(module.ModuleName),   // インスタンスハンドル
+               0                                     // スレッドID（0：全てのスレッドでフック）
+           );
+         
+            if (_hookHandle == IntPtr.Zero)
+            {
+              Console.WriteLine("フック登録に失敗しました");
+              Console.WriteLine($"モジュール名: {module.ModuleName}");
+              int error = Marshal.GetLastWin32Error();
+              Console.WriteLine($"エラーコード: {error}");
+            }
           }
         }
       }
@@ -88,7 +94,7 @@ namespace DokodemoLLM
 
     public static void ClearMainForm()
     {
-      _mainForm = null;
+      _mainForm = null!;
     }
 
     private static IntPtr CallbackProc(int nCode, IntPtr wParam, IntPtr lParam)
@@ -127,13 +133,13 @@ namespace DokodemoLLM
               try
               {
                 _mainForm.Invoke(new Action(() => {
-                  _mainForm.Close();
+                  _mainForm?.Close();
                 }));
               }
               catch
               {
                 // フォームが既に閉じられている場合
-                _mainForm = null;
+                _mainForm = null!;
               }
             }
             
@@ -143,9 +149,10 @@ namespace DokodemoLLM
               {
                 // アクティブなウィンドウの選択されたテキストを取得
                 IntPtr activeWindowHandle = GetForegroundWindow();
-                string selectedText = GetSelectedText(activeWindowHandle);
+                string selectText = GetSelectedText(activeWindowHandle);
                 
-                _mainForm = new MainForm(selectedText);
+                _mainForm = new MainForm(selectText);
+                _mainForm.activeWindowHandle = activeWindowHandle;
                 _mainForm.ShowDialog();
               }
               catch
@@ -188,6 +195,9 @@ namespace DokodemoLLM
             // アクティブウィンドウをフォアグラウンドに設定
             SetForegroundWindow(activeWindowHandle);
             SetFocus(activeWindowHandle);
+
+            // キー入力が反映されるまで少し待機
+            System.Threading.Thread.Sleep(50);
               
             // Ctrl+C を送信
             keybd_event(VK_L_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
@@ -223,6 +233,50 @@ namespace DokodemoLLM
       {
         // エラーが発生した場合は空の文字列を返す
         return "";
+      }
+    }
+
+
+    // 選択されたテキストを設定（クリップボード経由で貼り付け）
+    public static void SetSelectedText(IntPtr activeWindowHandle, string resultText)
+    {
+      try
+      {
+        // アクティブウィンドウのスレッドIDを取得
+        uint activeThreadId = GetWindowThreadProcessId(activeWindowHandle, out uint _);
+        uint currentThreadId = GetCurrentThreadId();
+
+        // スレッドの入力状態を接続
+        bool attachSuccess = AttachThreadInput(currentThreadId, activeThreadId, true);
+        
+        if (attachSuccess)
+        {
+          try
+          {
+            // アクティブウィンドウをフォアグラウンドに設定
+            SetForegroundWindow(activeWindowHandle);
+            SetFocus(activeWindowHandle);
+              
+            // Ctrl+V を送信
+            keybd_event(VK_L_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_R_WINDOWS, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_V, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_V, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+            // キー入力が反映されるまで少し待機
+            System.Threading.Thread.Sleep(50);
+          }
+          finally
+          {
+            // スレッドの入力状態を切断
+            AttachThreadInput(currentThreadId, activeThreadId, false);
+          }
+        }
+      }
+      catch
+      {
       }
     }
 
