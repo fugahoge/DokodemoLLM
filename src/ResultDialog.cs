@@ -20,7 +20,7 @@ namespace DokodemoLLM
 
     private void InitializeComponent()
     {
-      this.Text = "結果";
+      this.Text = "これでよいですか？";
       this.Size = new System.Drawing.Size(800, 520);
       this.StartPosition = FormStartPosition.CenterParent;
       this.FormBorderStyle = FormBorderStyle.FixedDialog;
