@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -42,6 +43,14 @@ namespace DokodemoLLM
         // 設定ファイルの読み込みに失敗した場合はデフォルト設定を使用
         _config = new AppConfig();
         Console.WriteLine($"設定ファイルの読み込みに失敗しました: {ex.Message}");
+      }
+    }
+
+    public static void UpdatePrompts(List<string> prompts)
+    {
+      if (_config != null)
+      {
+        _config.Prompts = prompts;
       }
     }
 
