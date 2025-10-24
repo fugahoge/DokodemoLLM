@@ -5,11 +5,14 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SupportedOSPlatformVersion>6.1</SupportedOSPlatformVersion>
     <SupportedOSPlatform>windows</SupportedOSPlatform>
     
-    <!-- 単一ファイル実行可能ファイルの設定 -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>res\dokodemollm.ico</ApplicationIcon>
+    
+    <!-- 単一ファイル実行可能ファイルの設定（最適化） -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>
     
@@ -19,30 +22,12 @@
     <!-- デバッグシンボルの埋め込み -->
     <DebugType>embedded</DebugType>
     
-    <UseWindowsForms>true</UseWindowsForms>
-    <ApplicationIcon>res\dokodemollm.ico</ApplicationIcon>
-    
-    <!-- 単一ファイル実行可能ファイルの設定 -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    
-    <!-- 不要なコードの削除（トリミング） -->
-    <PublishTrimmed>false</PublishTrimmed>
-    
-    <!-- 出力先の設定 -->
-    <PublishDir>publish</PublishDir>
-    
-    <!-- デバッグシンボルの埋め込み -->
-    <DebugType>embedded</DebugType>
-    
-    <!-- ReadyToRunとアセンブリトリミング -->
+    <!-- ReadyToRun（容量削減） -->
     <PublishReadyToRun>true</PublishReadyToRun>
-    <PublishTrimmed>false</PublishTrimmed>
-    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
     
-    <!-- 不要なファイルの除外 -->
-    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+    <!-- 最適化設定 -->
+    <Optimize>true</Optimize>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
