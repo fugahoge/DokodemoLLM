@@ -41,6 +41,10 @@ namespace DokodemoLLM
       resultTextBox.Location = new System.Drawing.Point(20, 20);
       resultTextBox.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
       resultTextBox.Text = resultText;
+      
+      // テキストを全選択しないようにカーソルを先頭に設定
+      resultTextBox.SelectionStart = 0;
+      resultTextBox.SelectionLength = 0;
 
       // 追加ボタン
       addButton = new Button();

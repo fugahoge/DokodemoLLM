@@ -17,8 +17,6 @@ namespace DokodemoLLM
     private const uint KEYEVENTF_KEYUP = 0x0002;
     private const int WH_KEYBOARD_LL = 0x0D;
 
-
-
     private static IntPtr _hookHandle = IntPtr.Zero;
     private static readonly LowLevelKeyboardProc _callBack = CallbackProc!;
     private static MainForm? _mainForm = null;
@@ -235,7 +233,6 @@ namespace DokodemoLLM
         return "";
       }
     }
-
 
     // 選択されたテキストを設定（クリップボード経由で貼り付け）
     public static void SetSelectedText(IntPtr activeWindowHandle, string resultText)

@@ -55,6 +55,20 @@ namespace DokodemoLLM
         Program.SetSelectedText(this.activeWindowHandle, this.resultText);
       }
       
+      // プロンプト履歴をConfigManagerに反映
+      var promptList = new List<string>();
+      foreach (var item in promptCombo.Items)
+      {
+        if (item != null)
+        {
+          promptList.Add(item.ToString()!);
+        }
+      }
+      ConfigManager.UpdatePrompts(promptList);
+      
+      // 設定を保存
+      ConfigManager.SaveConfig();
+      
       // フォームが閉じられた時にProgramクラスの_mainFormをクリア
       Program.ClearMainForm();
     }
@@ -223,41 +237,26 @@ namespace DokodemoLLM
         using (var dialog = new ResultDialog(this.resultText))
         {
           var dialogResult = dialog.ShowDialog(this);
-
-          // ダイアログの結果に応じて処理
-          if (dialogResult == DialogResult.Cancel)
-          {
-            statusLabel.Text = "キャンセルしました";
-            statusLabel.ForeColor = Color.Blue;
-            return;
-          }
-
+          
           // 新しい選択テキストを作成
           if (dialogResult == DialogResult.Yes)
           {
             this.resultText = selectText + "\n" + this.resultText + "\n";
           }
-          else
-          {
-            this.resultText = selectText;
-          }
 
           // クリップボードにコピー
-          if (CopyToClipboard(this.resultText))
+          Clipboard.SetText(this.resultText);
+          statusLabel.Text = "結果をクリップボードにコピーしました";
+          statusLabel.ForeColor = Color.Green;
+
+          // ダイアログの結果に応じて処理
+          if (dialogResult == DialogResult.Yes || dialogResult == DialogResult.No)
           {
-            statusLabel.Text = "結果をクリップボードにコピーしました";
-            statusLabel.ForeColor = Color.Green;
-          }
-          else
-          {
-            statusLabel.Text = "クリップボードへのコピーに失敗しました";
-            statusLabel.ForeColor = Color.Red;
+            // フォームを閉じる
+            this.DialogResult = DialogResult.Yes;
+            this.Close();
           }
         }
-
-        // フォームを閉じる
-        this.DialogResult = DialogResult.Yes;
-        this.Close();
       }
       catch (Exception ex)
       {
@@ -417,21 +416,5 @@ namespace DokodemoLLM
         return $"[ページ本文取得エラー: {ex.Message}]";
       }
     }
-
-    // クリップボードにテキストをコピーするメソッド
-    public bool CopyToClipboard(string text)
-    {
-      try
-      {
-        Clipboard.SetText(text);
-        return true;
-      }
-      catch (Exception ex)
-      {
-        MessageBox.Show($"クリップボードへのコピーに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        return false;
-      }
-    }
-
   }
 }
