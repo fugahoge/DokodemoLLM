@@ -32,7 +32,7 @@ jobs:
       run: dotnet build ${{ env.Project_Name }} --configuration ${{ matrix.configuration }} --no-restore
     
     - name: Publish
-      run: dotnet publish ${{ env.Project_Name }} --configuration ${{ matrix.configuration }} --no-build --self-contained true --runtime win-x64 --output ./publish
+      run: dotnet publish ${{ env.Project_Name }} --configuration ${{ matrix.configuration }} --no-build --output ./publish
     
     - name: Zip output
       run: powershell Compress-Archive -DestinationPath ${{ matrix.configuration }}.zip -Path .\publish\*.*
