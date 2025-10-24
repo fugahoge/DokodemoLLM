@@ -15,20 +15,22 @@ namespace DokodemoLLM
   {
     private static readonly HttpClient httpClient = new HttpClient();
 
-    private ComboBox promptCombo;
-    private Label promptLabel;
-    private TextBox promptEdit;
-    private Button okButton;
-    private Button closeButton;
-    private Button clearButton;
-    private CheckBox webSearchCheck;
-    private Label statusLabel;
+    private ComboBox promptCombo = null!;
+    private Label promptLabel = null!;
+    private TextBox promptEdit = null!;
+    private Button okButton = null!;
+    private Button closeButton = null!;
+    private Button clearButton = null!;
+    private CheckBox webSearchCheck = null!;
+    private Label statusLabel = null!;
 
-    private string userText = "";
+    public string selectText = "";
+    public string resultText = "";
+    public IntPtr activeWindowHandle = IntPtr.Zero;
 
-    public MainForm(string selectedText)
+    public MainForm(string selectText)
     {
-      userText = selectedText;
+      this.selectText = selectText;
 
       // フォームを初期化
       InitializeComponent();
@@ -36,7 +38,7 @@ namespace DokodemoLLM
       this.Shown += MainForm_Shown;
     }
 
-    private void MainForm_Shown(object sender, EventArgs e)
+    private void MainForm_Shown(object? sender, EventArgs e)
     {
       // ウインドウをアクティブにする
       this.BringToFront();
@@ -44,8 +46,15 @@ namespace DokodemoLLM
       this.Focus();
     }
 
-    private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+    private void MainForm_FormClosed(object? sender, FormClosedEventArgs e)
     {
+      // MainFormが閉じられた後に実行する処理
+      if (this.DialogResult == DialogResult.Yes && !string.IsNullOrEmpty(this.resultText) && this.activeWindowHandle != IntPtr.Zero)
+      {
+        // 結果を選択されたテキストとして設定
+        Program.SetSelectedText(this.activeWindowHandle, this.resultText);
+      }
+      
       // フォームが閉じられた時にProgramクラスの_mainFormをクリア
       Program.ClearMainForm();
     }
@@ -113,14 +122,6 @@ namespace DokodemoLLM
       okButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       okButton.Click += OkButton_Click;
 
-      // クローズボタン
-      closeButton = new Button();
-      closeButton.Text = "クローズ";
-      closeButton.Size = new System.Drawing.Size(100, 40);
-      closeButton.Location = new System.Drawing.Point(240, 510);
-      closeButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
-      closeButton.Click += CloseButton_Click;
-
       // クリアボタン
       clearButton = new Button();
       clearButton.Text = "クリア";
@@ -128,6 +129,14 @@ namespace DokodemoLLM
       clearButton.Location = new System.Drawing.Point(130, 510);
       clearButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
       clearButton.Click += ClearButton_Click;
+
+      // 閉じるボタン
+      closeButton = new Button();
+      closeButton.Text = "閉じる";
+      closeButton.Size = new System.Drawing.Size(100, 40);
+      closeButton.Location = new System.Drawing.Point(240, 510);
+      closeButton.Font = new System.Drawing.Font("Yu Gothic UI", 14F);
+      closeButton.Click += CloseButton_Click;
 
       // コンボボックスの選択変更イベント
       promptCombo.SelectedIndexChanged += PromptCombo_SelectedIndexChanged;
@@ -149,28 +158,29 @@ namespace DokodemoLLM
       this.Controls.Add(clearButton);
     }
 
-    private void PromptCombo_SelectedIndexChanged(object sender, EventArgs e)
+    private void PromptCombo_SelectedIndexChanged(object? sender, EventArgs e)
     {
       if (promptCombo.SelectedIndex >= 0)
       {
-        promptEdit.Text = promptCombo.SelectedItem.ToString();
+        promptEdit.Text = promptCombo.SelectedItem?.ToString() ?? "";
       }
     }
 
-    private void CloseButton_Click(object sender, EventArgs e)
+    private void CloseButton_Click(object? sender, EventArgs e)
     {
       // フォームを閉じる
+      this.DialogResult = DialogResult.Abort;
       this.Close();
     }
 
-    private void ClearButton_Click(object sender, EventArgs e)
+    private void ClearButton_Click(object? sender, EventArgs e)
     {
       // 入力エリアをクリア
       promptEdit.Text = "";
       promptCombo.SelectedIndex = -1;
     }
 
-    private async void OkButton_Click(object sender, EventArgs e)
+    private async void OkButton_Click(object? sender, EventArgs e)
     {
       // プロンプトテキストを取得
       string promptText = promptEdit.Text.Trim();
@@ -196,43 +206,58 @@ namespace DokodemoLLM
 
       try
       {
-        string systemPrompt = promptText;
-
-        // システムプロンプトを作成
+        // ウェブ検索を使用する場合
         if (webSearchCheck.Checked)
         {
           // ウェブ検索の処理
-          var searchResults = await SearchWeb(userText.Trim());
+          var searchResults = await SearchWeb(selectText.Trim());
           var pageExcerpts = await FetchPageExcerpts(searchResults.Item2);
-          userText = $"{userText.Trim()}\n###以下の検索結果も必要に応じて参照してください：\n{pageExcerpts}\n";
+          promptText = $"{promptText.Trim()}\n###以下の検索結果も必要に応じて参照してください：\n{pageExcerpts}\n";
         }
 
         // APIを呼び出し
-        string result = await CallAPI(systemPrompt, userText);
+        this.resultText = await CallAPI(promptText, selectText);
+        if (string.IsNullOrEmpty(this.resultText)) return;
 
-        if (!string.IsNullOrEmpty(result))
+        // 結果をダイアログで表示
+        using (var dialog = new ResultDialog(this.resultText))
         {
-          // 結果をダイアログで表示
-          using (var dialog = new ResultDialog(result))
+          var dialogResult = dialog.ShowDialog(this);
+
+          // ダイアログの結果に応じて処理
+          if (dialogResult == DialogResult.Cancel)
           {
-            var dialogResult = dialog.ShowDialog(this);
-            if (dialogResult == DialogResult.OK)
-            {
-              statusLabel.Text = "結果をクリップボードにコピーしました";
-              statusLabel.ForeColor = Color.Green;
-            }
-            else
-            {
-              statusLabel.Text = "キャンセルしました";
-              statusLabel.ForeColor = Color.Blue;
-            }
+            statusLabel.Text = "キャンセルしました";
+            statusLabel.ForeColor = Color.Blue;
+            return;
+          }
+
+          // 新しい選択テキストを作成
+          if (dialogResult == DialogResult.Yes)
+          {
+            this.resultText = selectText + "\n" + this.resultText + "\n";
+          }
+          else
+          {
+            this.resultText = selectText;
+          }
+
+          // クリップボードにコピー
+          if (CopyToClipboard(this.resultText))
+          {
+            statusLabel.Text = "結果をクリップボードにコピーしました";
+            statusLabel.ForeColor = Color.Green;
+          }
+          else
+          {
+            statusLabel.Text = "クリップボードへのコピーに失敗しました";
+            statusLabel.ForeColor = Color.Red;
           }
         }
-        else
-        {
-          statusLabel.Text = "APIの呼び出しに失敗しました";
-          statusLabel.ForeColor = Color.Red;
-        }
+
+        // フォームを閉じる
+        this.DialogResult = DialogResult.Yes;
+        this.Close();
       }
       catch (Exception ex)
       {
@@ -245,7 +270,7 @@ namespace DokodemoLLM
       }
     }
 
-    private async Task<string> CallAPI(string systemPrompt, string userText)
+    private async Task<string> CallAPI(string systemPrompt, string selectText)
     {
       // 設定ファイルから設定を読み込み
       var config = ConfigManager.Config;
@@ -262,7 +287,7 @@ namespace DokodemoLLM
       var messages = new List<OpenAI.Chat.ChatMessage>
       {
         OpenAI.Chat.ChatMessage.CreateSystemMessage(systemPrompt),
-        OpenAI.Chat.ChatMessage.CreateUserMessage(userText)
+        OpenAI.Chat.ChatMessage.CreateUserMessage(selectText)
       };
 
       // モデルを設定
@@ -390,6 +415,21 @@ namespace DokodemoLLM
       catch (Exception ex)
       {
         return $"[ページ本文取得エラー: {ex.Message}]";
+      }
+    }
+
+    // クリップボードにテキストをコピーするメソッド
+    public bool CopyToClipboard(string text)
+    {
+      try
+      {
+        Clipboard.SetText(text);
+        return true;
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show($"クリップボードへのコピーに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return false;
       }
     }
 

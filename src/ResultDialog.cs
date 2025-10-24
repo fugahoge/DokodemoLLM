@@ -6,9 +6,10 @@ namespace DokodemoLLM
 {
   public partial class ResultDialog : Form
   {
-    private TextBox resultTextBox;
-    private Button okButton;
-    private Button cancelButton;
+    private TextBox resultTextBox = null!;
+    private Button addButton = null!;
+    private Button repButton = null!;
+    private Button closeButton = null!;
     private string resultText;
 
     public ResultDialog(string result)
@@ -41,50 +42,56 @@ namespace DokodemoLLM
       resultTextBox.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
       resultTextBox.Text = resultText;
 
-      // OKボタン
-      okButton = new Button();
-      okButton.Text = "コピー";
-      okButton.Size = new System.Drawing.Size(120, 40);
-      okButton.Location = new System.Drawing.Point(20, 420);
-      okButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
-      okButton.Click += OkButton_Click;
+      // 追加ボタン
+      addButton = new Button();
+      addButton.Text = "追加";
+      addButton.Size = new System.Drawing.Size(120, 40);
+      addButton.Location = new System.Drawing.Point(20, 420);
+      addButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
+      addButton.Click += AddButton_Click;
 
-      // キャンセルボタン
-      cancelButton = new Button();
-      cancelButton.Text = "クローズ";
-      cancelButton.Size = new System.Drawing.Size(120, 40);
-      cancelButton.Location = new System.Drawing.Point(150, 420);
-      cancelButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
-      cancelButton.Click += CancelButton_Click;
+      // 置換ボタン
+      repButton = new Button();
+      repButton.Text = "置換";
+      repButton.Size = new System.Drawing.Size(120, 40);
+      repButton.Location = new System.Drawing.Point(150, 420);
+      repButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
+      repButton.Click += ReplaceButton_Click;
+
+      // 閉じるボタン
+      closeButton = new Button();
+      closeButton.Text = "閉じる";
+      closeButton.Size = new System.Drawing.Size(120, 40);
+      closeButton.Location = new System.Drawing.Point(280, 420);
+      closeButton.Font = new System.Drawing.Font("Yu Gothic UI", 12F);
+      closeButton.Click += CloseButton_Click;
 
       // コントロールをフォームに追加
       this.Controls.Add(resultTextBox);
-      this.Controls.Add(okButton);
-      this.Controls.Add(cancelButton);
+      this.Controls.Add(addButton);
+      this.Controls.Add(repButton);
+      this.Controls.Add(closeButton);
 
       // デフォルトボタンを設定
-      this.AcceptButton = okButton;
-      this.CancelButton = cancelButton;
+      this.AcceptButton = addButton;
+      this.CancelButton = closeButton;
     }
 
-    private void OkButton_Click(object sender, EventArgs e)
+    private void AddButton_Click(object? sender, EventArgs e)
     {
-      try
-      {
-        Clipboard.SetText(resultText);
-      }
-      catch (Exception ex)
-      {
-        MessageBox.Show($"クリップボードへのコピーに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
-      }
-
-      this.DialogResult = DialogResult.OK;
+      this.DialogResult = DialogResult.Yes;
       this.Close();
     }
 
-    private void CancelButton_Click(object sender, EventArgs e)
+    private void ReplaceButton_Click(object? sender, EventArgs e)
     {
-      this.DialogResult = DialogResult.Cancel;
+      this.DialogResult = DialogResult.No;
+      this.Close();
+    }
+
+    private void CloseButton_Click(object? sender, EventArgs e)
+    {
+      this.DialogResult = DialogResult.Abort;
       this.Close();
     }
   }
