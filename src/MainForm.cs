@@ -3,11 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using HtmlAgilityPack;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using HtmlAgilityPack;
 
 namespace DokodemoLLM
 {
@@ -275,7 +275,7 @@ namespace DokodemoLLM
       var config = ConfigManager.Config;
       
       // エンドポイントを指定
-      var endpoint = new Uri(config.Endpoint);
+      var endpoint = new Uri(config.Endpoint.TrimEnd('/') + "/");
       var credential = new System.ClientModel.ApiKeyCredential(config.ApiKey);
       var options = new OpenAI.OpenAIClientOptions
       {

@@ -5,6 +5,7 @@ namespace DokodemoLLM
 {
   public class AppConfig
   {
+    /// <summary>OpenAI互換APIのエンドポイント（例: http://127.0.0.1:1234/v1/、http://localhost:11434/v1/）</summary>
     public string Endpoint { get; set; } = "http://127.0.0.1:1234/v1/";
     public string ApiKey { get; set; } = "dummy";
     public string Model { get; set; } = "google/gemma-3-4b";

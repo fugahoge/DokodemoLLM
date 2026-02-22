@@ -1,0 +1,10 @@
+services:
+  ollama:
+    build: .
+    image: dokodemollm-ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    restart: unless-stopped

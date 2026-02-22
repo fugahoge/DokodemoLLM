@@ -1,7 +1,7 @@
 {
-  "Endpoint": "http://127.0.0.1:1234/v1/",
+  "Endpoint": "http://localhost:11434/v1/",
   "ApiKey": "dummy",
-  "Model": "google/gemma-3-4b",
+  "Model": "gemma3:1b",
   "Temperature": 0.7,
   "MaxOutputTokenCount": 4096,
   "Prompts": [

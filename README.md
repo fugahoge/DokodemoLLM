@@ -44,6 +44,8 @@ DokodemoLLMのリポジトリの「リリース」からdokodemollm.zipをダウ
 2. **config.jsonの設定**  
 - **LLMのEndpoint**  
   LLMを呼び出す際のEndpointのURLをセットしてください。
+  末尾は必ず `/v1/` にしてください。
+  （例: LM Studio `http://127.0.0.1:1234/v1/`、Ollama `http://localhost:11434/v1/`）
   `Endpoint`
 - **EndpointのAPIキー**  
   LLMを利用する際のAPIキーを取得し、以下のプロパティへセットしてください。  
@@ -58,6 +60,12 @@ WindowsのスタートアップメニューにDokodemoLLM.exeのショートカ�
 
 ## ショートカットの変更
 ショートカットの変更は未対応です。
+
+## OllamaをDockerで起動する場合
+
+```bash
+# ビルド＆起動（docker-compose）
+docker compose up -d --build
 
 ## Macでの使用
 DokodemoLLM4Macをご検討ください。
