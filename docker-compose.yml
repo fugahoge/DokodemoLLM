@@ -1,7 +1,7 @@
 services:
   ollama:
     build: .
-    image: dokodemollm-ollama
+    image: llm-ollama
     container_name: ollama
     ports:
       - "11434:11434"
