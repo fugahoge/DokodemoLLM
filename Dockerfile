@@ -34,7 +34,7 @@ RUN ollama serve & \
 
 EXPOSE 11434
 ENV OLLAMA_HOST=0.0.0.0:11434
-ENV OLLAMA_ORIGINS=*
+ENV OLLAMA_ORIGINS="http://localhost:*"
 
 ENTRYPOINT ["/bin/ollama"]
 CMD ["serve"]
